@@ -1,26 +1,8 @@
-from keras.layers import Dropout
-from keras.callbacks import ModelCheckpoint
-from keras.layers import Input, LSTM, Dense
+from keras.layers import Input, Dense
 from keras.models import Model
-from keras.layers.core import Reshape
 from utils import preprocess_data, create_dataset, generate_name
 from keras.layers import SimpleRNN
 from keras.optimizers import SGD
-import numpy as np
-import sys
-import csv
-
-
-def initialize_model(n_labels, seq_length=1, mem_units=128, dropout_prob=0.1):
-    input_layer = Input(shape=(seq_length, 1, ), dtype='float32', name='input')
-    lstm_layer = LSTM(mem_units)(input_layer)
-    dropout_layer = Dropout(dropout_prob)(lstm_layer)
-    Respahed_layer = Reshape((mem_units, 1,))(dropout_layer)
-    lstm_layer2 = LSTM(mem_units)(Respahed_layer)
-    dropout_layer2 = Dropout(dropout_prob)(lstm_layer2)
-    dense_layer = Dense(n_labels, activation='softmax')(dropout_layer2)
-    model = Model(inputscs=[input_layer], outputs=[dense_layer])
-    return model
 
 
 def initialize_simple_model(hidden_size, longest_sentence, vocab_size):
@@ -29,9 +11,6 @@ def initialize_simple_model(hidden_size, longest_sentence, vocab_size):
     dense_layer = Dense(vocab_size, activation='softmax')(rnn_layer)
     model = Model(inputs=[input_layer], outputs=[dense_layer])
     return model
-
-def initialize_lstm_model():
-    pass
 
 if __name__ == '__main__':
     hidden_size = 150

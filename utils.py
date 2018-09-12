@@ -2,7 +2,7 @@ from keras.preprocessing import sequence
 import numpy as np
 from keras.utils import to_categorical
 import re
-import string
+
 
 def _create_dic(text):
     chars = sorted(list(set(text)))
