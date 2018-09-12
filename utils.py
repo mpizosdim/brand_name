@@ -2,6 +2,7 @@ from keras.preprocessing import sequence
 import numpy as np
 from keras.utils import to_categorical
 import re
+from keras.callbacks import Callback
 
 
 def _create_dic(text):
@@ -73,32 +74,31 @@ def create_dataset(examples, char_to_int_dic, method="one-hot"):
     return X_onehot, Y_onehot, longest_sentence, vocab_size
 
 
-def softmax(x):
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum(axis=0)
+class generate_text(Callback):
+    def __init__(self, char_to_int, int_to_char, num_names, max_size, vocab_size):
+        self.char_to_int_dic = char_to_int
+        self.int_to_char_dic = int_to_char
+        self.num_names = num_names
+        self.max_size = max_size
+        self.vocab_size = vocab_size
 
+    def on_epoch_end(self, epoch, logs={}):
+        for i in range(0, self.num_names):
+            stop = False
+            index = np.random.randint(1, self.vocab_size)
+            ch = self.int_to_char_dic[index]
+            counter = 1
+            target_seq = np.zeros((1, self.max_size, self.vocab_size))
+            target_seq[0, 0, self.char_to_int_dic[ch]] = 1.
+            while stop == False and counter < self.max_size:
+                probs = self.model.predict(target_seq, verbose=0)[:, counter-1, :]
+                index = np.random.choice(range(self.vocab_size), p=probs.ravel())
+                c = self.int_to_char_dic[index]
+                if c == '\n':
+                    stop = True
+                else:
+                    ch = ch + c
+                    target_seq[0, counter, self.char_to_int_dic[c]] = 1.
+                    counter = counter + 1
 
-def generate_name(Waa, Wax, ba, Wya, by, hidden_size, int_to_char_dic, char_to_int_dic, vocab_size, max_size):
-    index = np.random.randint(1, vocab_size)
-    random_character = int_to_char_dic[index]
-    dino_name = []
-    dino_name.append(random_character)
-
-    counter = 0
-    newline_character = char_to_int_dic['\n']
-    a_next = np.zeros((hidden_size, 1))
-
-    while index != newline_character and counter != max_size:
-        xt = np.zeros((vocab_size, 1))
-        xt[index, :] = 1
-
-        a_next = np.tanh(np.dot(Waa.T, a_next) + np.dot(Wax.T, xt) + ba.reshape((hidden_size, 1)))
-        pred = softmax(np.dot(Wya.T, a_next) + by.reshape((vocab_size, 1)))
-        index = np.random.choice(range(vocab_size), p=pred.ravel())
-
-        prediction = int_to_char_dic[index]
-        dino_name.append(prediction)
-
-        counter += 1
-
-    return dino_name
+            print(ch)
