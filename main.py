@@ -192,8 +192,8 @@ class NamerLstm(object):
 
 def main_train():
     hidden_size = 250
-    epoch_size = 3
-    stopwords = ['shoes', 'paris', 'london', 'milano', 'jeans', 'eyewear', 'jewelry']
+    epoch_size = 100
+    stopwords = ['shoes', 'paris', 'london', 'milano', 'jeans', 'eyewear', 'jewelry', 'inc']
 
     namerAlgo = NamerLstm(hidden_size)
     namerAlgo.set_stopwords(stopwords)
