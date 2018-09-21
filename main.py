@@ -41,7 +41,7 @@ class GenerateNames(Callback):
 
 
 class NamerLstm(object):
-    def __init__(self):
+    def __init__(self, hidden_size):
         self.X = None
         self.Y = None
         self.stopwords = []
@@ -50,7 +50,7 @@ class NamerLstm(object):
         self.longest_sentence = None
         self.vocab_size = None
         self.model = None
-        self.hidden_size = None
+        self.hidden_size = hidden_size
 
     def set_stopwords(self, stopwords):
         self.stopwords = stopwords
@@ -119,9 +119,9 @@ class NamerLstm(object):
         else:
             return True
 
-    def build_model(self, hidden_size):
+    def build_model(self):
         input_layer = Input(shape=(self.longest_sentence, self.vocab_size,))
-        lstm_layer = LSTM(hidden_size, return_sequences=True)(input_layer)
+        lstm_layer = LSTM(self.hidden_size, return_sequences=True)(input_layer)
         dense_layer = TimeDistributed(Dense(self.vocab_size))(lstm_layer)
         actication_layer = TimeDistributed(Activation('softmax'))(dense_layer)
         model = Model(inputs=[input_layer], outputs=[actication_layer])
@@ -145,8 +145,8 @@ if __name__ == '__main__':
     number_of_names = 10
     stopwords = ['shoes', 'paris', 'london', 'milano', 'jeans', 'eyewear', 'jewelry']
 
-    namerAlgo = NamerLstm()
+    namerAlgo = NamerLstm(hidden_size)
     namerAlgo.set_stopwords(stopwords)
     namerAlgo.create_dataset("brandnames.csv", lowercase=True, additional_clean=True, min_len=2, only_english=True)
-    namerAlgo.build_model(hidden_size)
+    namerAlgo.build_model()
     namerAlgo.fit()
