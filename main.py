@@ -139,7 +139,8 @@ class NamerLstm(object):
     def build_model(self):
         input_layer = Input(shape=(self.longest_sentence, self.vocab_size,))
         lstm_layer = LSTM(self.hidden_size, return_sequences=True)(input_layer)
-        dense_layer = TimeDistributed(Dense(self.vocab_size))(lstm_layer)
+        lstm_layer2 = LSTM(self.hidden_size, return_sequences=True)(lstm_layer)
+        dense_layer = TimeDistributed(Dense(self.vocab_size))(lstm_layer2)
         actication_layer = TimeDistributed(Activation('softmax'))(dense_layer)
         model = Model(inputs=[input_layer], outputs=[actication_layer])
         self.model = model
@@ -212,5 +213,5 @@ def main_load():
     namerAlgo.get_names(10)
 
 if __name__ == '__main__':
-    main_load()
+    main_train()
 
