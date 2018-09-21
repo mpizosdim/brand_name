@@ -10,6 +10,7 @@ from keras.callbacks import ModelCheckpoint
 import re
 import pickle
 from keras.models import load_model as load_model_keras
+import matplotlib.pyplot as plt
 
 
 class GenerateNames(Callback):
@@ -143,12 +144,21 @@ class NamerLstm(object):
         model = Model(inputs=[input_layer], outputs=[actication_layer])
         self.model = model
 
+    @staticmethod
+    def __plot_loss(history):
+        plt.plot(history.history['loss'])
+        plt.title('model loss')
+        plt.ylabel('loss')
+        plt.xlabel('epoch')
+        plt.show()
+
     def fit(self, lr=0.01, epoch_size=100, names_to_output_per_epoch=10):
         rmsp = RMSprop(lr=lr)
         self.model.compile(optimizer=rmsp, loss='categorical_crossentropy', metrics=["categorical_accuracy"])
         gen = GenerateNames(self, names_to_output_per_epoch)
         checkpoint = ModelCheckpoint("model_%s_%s" % (self.hidden_size, lr), monitor='loss', verbose=1, save_best_only=True, mode='min')
-        self.model.fit(x=self.X, y=self.Y, epochs=epoch_size, callbacks=[gen, checkpoint])
+        history = self.model.fit(x=self.X, y=self.Y, epochs=epoch_size, callbacks=[gen, checkpoint])
+        self.__plot_loss(history)
         self.save_info()
 
     def get_names(self, num_of_names):
@@ -182,14 +192,16 @@ class NamerLstm(object):
 
 def main_train():
     hidden_size = 250
+    epoch_size = 3
     stopwords = ['shoes', 'paris', 'london', 'milano', 'jeans', 'eyewear', 'jewelry']
 
     namerAlgo = NamerLstm(hidden_size)
     namerAlgo.set_stopwords(stopwords)
     namerAlgo.create_dataset("brandnames.csv", lowercase=True, additional_clean=True, min_len=2, only_english=True)
     namerAlgo.build_model()
-    namerAlgo.fit(epoch_size=10)
-    namerAlgo.get_names(2)
+    namerAlgo.fit(epoch_size=epoch_size)
+    namerAlgo.get_names(epoch_size)
+
 
 def main_load():
     hidden_size = 250
@@ -200,5 +212,5 @@ def main_load():
     namerAlgo.get_names(10)
 
 if __name__ == '__main__':
-    main_load()
+    main_train()
 
