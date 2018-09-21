@@ -57,9 +57,9 @@ class NamerLstm(object):
         self.stopwords = stopwords
         pass
 
-    def save_info(self):
+    def save_info(self, path):
         additional_info = {"vocab_size": self.vocab_size, "longest_sentence": self.longest_sentence}
-        with open('info.pkl', 'wb') as f:
+        with open(path, 'wb') as f:
             pickle.dump([self.char2int_dict, self.int2char_dict, additional_info], f, pickle.HIGHEST_PROTOCOL)
 
     def load_model(self, path):
@@ -152,14 +152,13 @@ class NamerLstm(object):
         plt.xlabel('epoch')
         plt.show()
 
-    def fit(self, lr=0.01, epoch_size=100, names_to_output_per_epoch=10):
+    def fit(self, lr=0.01, epoch_size=100, names_to_output_per_epoch=10, model_path=""):
         rmsp = RMSprop(lr=lr)
         self.model.compile(optimizer=rmsp, loss='categorical_crossentropy', metrics=["categorical_accuracy"])
         gen = GenerateNames(self, names_to_output_per_epoch)
-        checkpoint = ModelCheckpoint("model_%s_%s" % (self.hidden_size, lr), monitor='loss', verbose=1, save_best_only=True, mode='min')
+        checkpoint = ModelCheckpoint(model_path + "model_%s_%s" % (self.hidden_size, lr), monitor='loss', verbose=1, save_best_only=True, mode='min')
         history = self.model.fit(x=self.X, y=self.Y, epochs=epoch_size, callbacks=[gen, checkpoint])
         self.__plot_loss(history)
-        self.save_info()
 
     def get_names(self, num_of_names):
         for i in range(0, num_of_names):
@@ -192,7 +191,7 @@ class NamerLstm(object):
 
 def main_train():
     hidden_size = 250
-    epoch_size = 100
+    epoch_size = 3
     stopwords = ['shoes', 'paris', 'london', 'milano', 'jeans', 'eyewear', 'jewelry', 'inc']
 
     namerAlgo = NamerLstm(hidden_size)
@@ -200,7 +199,8 @@ def main_train():
     namerAlgo.create_dataset("brandnames.csv", lowercase=True, additional_clean=True, min_len=2, only_english=True)
     namerAlgo.build_model()
     namerAlgo.fit(epoch_size=epoch_size)
-    namerAlgo.get_names(epoch_size)
+    namerAlgo.save_info("info.pkl")
+
 
 
 def main_load():
@@ -212,5 +212,5 @@ def main_load():
     namerAlgo.get_names(10)
 
 if __name__ == '__main__':
-    main_train()
+    main_load()
 
