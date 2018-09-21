@@ -52,6 +52,7 @@ class NamerLstm(object):
         self.vocab_size = None
         self.model = None
         self.hidden_size = hidden_size
+        self.lstm_layers = None
 
     def set_stopwords(self, stopwords):
         self.stopwords = stopwords
@@ -136,13 +137,16 @@ class NamerLstm(object):
         else:
             return True
 
-    def build_model(self):
+    def build_model(self, number_of_lstm_layers=1):
         input_layer = Input(shape=(self.longest_sentence, self.vocab_size,))
-        lstm_layer = LSTM(self.hidden_size, return_sequences=True)(input_layer)
-        lstm_layer2 = LSTM(self.hidden_size, return_sequences=True)(lstm_layer)
-        dense_layer = TimeDistributed(Dense(self.vocab_size))(lstm_layer2)
+        lstm_layer = LSTM(self.hidden_size, return_sequences=True, name='lstm_layer_0')(input_layer)
+        for i in range(number_of_lstm_layers-1):
+                name = 'lstm_layer_{0}'.format(i+1)
+                lstm_layer = LSTM(self.hidden_size, return_sequences=True, name=name)(lstm_layer)
+        dense_layer = TimeDistributed(Dense(self.vocab_size))(lstm_layer)
         actication_layer = TimeDistributed(Activation('softmax'))(dense_layer)
         model = Model(inputs=[input_layer], outputs=[actication_layer])
+        self.lstm_layers = number_of_lstm_layers
         self.model = model
 
     @staticmethod
@@ -157,7 +161,7 @@ class NamerLstm(object):
         rmsp = RMSprop(lr=lr)
         self.model.compile(optimizer=rmsp, loss='categorical_crossentropy', metrics=["categorical_accuracy"])
         gen = GenerateNames(self, names_to_output_per_epoch)
-        checkpoint = ModelCheckpoint(model_path + "model_%s_%s" % (self.hidden_size, lr), monitor='loss', verbose=1, save_best_only=True, mode='min')
+        checkpoint = ModelCheckpoint(model_path + "model_%s_%s_%s" % (self.hidden_size, lr, self.lstm_layers), monitor='loss', verbose=1, save_best_only=True, mode='min')
         history = self.model.fit(x=self.X, y=self.Y, epochs=epoch_size, callbacks=[gen, checkpoint])
         self.__plot_loss(history)
 
@@ -192,26 +196,26 @@ class NamerLstm(object):
 
 def main_train():
     hidden_size = 250
-    epoch_size = 3
+    epoch_size = 2
+    lstm_layers = 2
     stopwords = ['shoes', 'paris', 'london', 'milano', 'jeans', 'eyewear', 'jewelry', 'inc']
 
     namerAlgo = NamerLstm(hidden_size)
     namerAlgo.set_stopwords(stopwords)
     namerAlgo.create_dataset("brandnames.csv", lowercase=True, additional_clean=True, min_len=2, only_english=True)
-    namerAlgo.build_model()
+    namerAlgo.build_model(lstm_layers)
     namerAlgo.fit(epoch_size=epoch_size)
     namerAlgo.save_info("info.pkl")
 
 
-
 def main_load():
     hidden_size = 250
+    lstm_layers = 2
     namerAlgo = NamerLstm(hidden_size)
     namerAlgo.load_info("info.pkl")
-    namerAlgo.build_model()
-    namerAlgo.load_model("model_250_0.01")
+    namerAlgo.build_model(lstm_layers)
+    namerAlgo.load_model("model_250_0.01_2")
     namerAlgo.get_names(10)
 
 if __name__ == '__main__':
-    main_train()
-
+    main_load()
