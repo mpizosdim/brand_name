@@ -6,6 +6,7 @@ from keras.optimizers import RMSprop
 from keras.preprocessing import sequence
 from keras.utils import to_categorical
 from keras.callbacks import Callback
+from keras.callbacks import ModelCheckpoint
 import re
 
 
@@ -49,6 +50,7 @@ class NamerLstm(object):
         self.longest_sentence = None
         self.vocab_size = None
         self.model = None
+        self.hidden_size = None
 
     def set_stopwords(self, stopwords):
         self.stopwords = stopwords
@@ -123,13 +125,15 @@ class NamerLstm(object):
         dense_layer = TimeDistributed(Dense(self.vocab_size))(lstm_layer)
         actication_layer = TimeDistributed(Activation('softmax'))(dense_layer)
         model = Model(inputs=[input_layer], outputs=[actication_layer])
+        self.hidden_size = hidden_size
         self.model = model
 
     def fit(self, lr=0.01, epoch_size=2, names_to_output=10):
         rmsp = RMSprop(lr=lr)
         self.model.compile(optimizer=rmsp, loss='categorical_crossentropy', metrics=["categorical_accuracy"])
         gen = GenerateNames(self.char2int_dict, self.int2char_dict, names_to_output, self.longest_sentence, self.vocab_size)
-        self.model.fit(x=self.X, y=self.Y, epochs=epoch_size, callbacks=[gen])
+        checkpoint = ModelCheckpoint("model_%s_%s" % (self.hidden_size, lr), monitor='loss', verbose=1, save_best_only=True, mode='min')
+        self.model.fit(x=self.X, y=self.Y, epochs=epoch_size, callbacks=[gen, checkpoint])
 
     def summary(self):
         print('vocab size is: %d' % self.vocab_size)
