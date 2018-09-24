@@ -210,12 +210,12 @@ def main_train():
 
 def main_load():
     hidden_size = 250
-    lstm_layers = 2
+    lstm_layers = 3
     namerAlgo = NamerLstm(hidden_size)
     namerAlgo.load_info("info.pkl")
     namerAlgo.build_model(lstm_layers)
-    namerAlgo.load_model("model_250_0.01_2")
-    namerAlgo.get_names(10)
+    namerAlgo.load_model("model_%s_0.01_%s" % (hidden_size, lstm_layers))
+    namerAlgo.get_names(20)
 
 if __name__ == '__main__':
     main_load()
